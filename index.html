@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DENISIA Launcher | EMPIRE EDITION</title>
+    <style>
+        /* ГРАФИКА DENISIA */
+        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; cursor: crosshair; transform: translateZ(0); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #00BFFF; font-family: 'Arial Black', sans-serif; overflow: hidden; }
+        
+        #universe-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #001a33 0%, #000 85%); z-index: -10; }
+        .star { position: absolute; background: #00BFFF; border-radius: 50%; animation: twinkle var(--d) infinite ease-in-out; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.3); } }
+
+        /* ОБЪЕКТЫ */
+        .obj { position: fixed; z-index: -2; pointer-events: none; }
+        .ufo { font-size: 50px; animation: flyLR 12s linear infinite; top: 20%; }
+        .rocket { font-size: 40px; animation: flyDiagonal 7s linear infinite; }
+        @keyframes flyLR { from { left: -100px; } to { left: 110vw; } }
+        @keyframes flyDiagonal { from { transform: translate(-10vw, 100vh) rotate(45deg); } to { transform: translate(110vw, -10vh) rotate(45deg); } }
+
+        /* ГЛАВНАЯ КНОПКА BUY DENISIA LAUNCHER */
+        .buy-brand-btn { 
+            background: #00BFFF; 
+            color: #000; 
+            width: 90%; 
+            max-width: 900px; 
+            padding: 25px; 
+            text-align: center; 
+            font-size: 28px; 
+            font-weight: 900; 
+            text-decoration: none; 
+            margin: 20px 0; 
+            box-shadow: 0 0 40px #00BFFF; 
+            transition: 0.3s;
+            border: 4px solid #fff;
+            z-index: 100;
+            display: block;
+        }
+        .buy-brand-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 0 60px #fff; color: #00BFFF; }
+
+        /* ЛАУНЧЕР */
+        #main-launcher { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; width: 100%; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 90%; max-width: 900px; z-index: 10; }
+        .game-btn { background: rgba(0, 0, 0, 0.8); border: 2px solid #00BFFF; color: #00BFFF; padding: 20px; text-align: center; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.3s; backdrop-filter: blur(10px); cursor: pointer; }
+        .game-btn:hover { background: #00BFFF; color: #000; transform: scale(1.05); }
+        .locked-btn { border-color: #555; color: #555; cursor: not-allowed; }
+
+        /* ТАЙМЕР И ОКНА */
+        #trial-timer { position: fixed; bottom: 20px; left: 20px; background: rgba(0, 191, 255, 0.2); border: 1px solid #00BFFF; padding: 10px; color: #00BFFF; z-index: 10000; }
+        #game-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000000; }
+        #game-frame { width: 100%; height: 100%; border: none; }
+        .close-game { position: absolute; top: 20px; right: 20px; background: #00BFFF; color: #000; padding: 10px 25px; font-weight: bold; z-index: 1000001; }
+    </style>
+</head>
+<body>
+
+    <div id="universe-bg"></div>
+    <div id="trial-timer">TRIAL: <span id="time-left">48:00:00</span></div>
+
+    <div id="game-view">
+        <button class="close-game" onclick="closeGame()">EXIT MISSION</button>
+        <iframe id="game-frame" src=""></iframe>
+    </div>
+
+    <div id="main-launcher">
+        <div class="obj ufo">🛸</div><div class="obj rocket">🚀</div>
+        <div style="font-size: 60px; text-shadow: 0 0 20px #00BFFF;">DENISIA</div>
+        
+        <a href="https://www.patreon.com/posts/denisia-launcher-149434736" target="_blank" class="buy-brand-btn">
+            BUY DENISIA LAUNCHER
+        </a>
+
+        <div class="grid">
+            <div onclick="launchGame('https://denis19sl02-sketch.github.io/Funny-Balls-/')" class="game-btn">Funny Balls</div>
+            <div onclick="launchGame('https://denis19sl02-sketch.github.io/Aliens-/')" class="game-btn">Aliens</div>
+            
+            <div onclick="lockedGame()" class="game-btn locked-btn">Funny Balls 2 🔒</div>
+            <div onclick="lockedGame()" class="game-btn locked-btn">Racing Horses 🔒</div>
+            <div onclick="lockedGame()" class="game-btn locked-btn">Saving The Titanic 🔒</div>
+            
+            <div onclick="launchGame('https://denis19sl02-sketch.github.io/Zombie-In-Forest-/')" class="game-btn">Dark Woods</div>
+            <div onclick="launchGame('https://denis19sl02-sketch.github.io/DENISIAGRAM-/')" class="game-btn">DENISIAGRAM</div>
+        </div>
+    </div>
+
+    <script>
+        const TRIAL_DURATION = 48 * 60 * 60 * 1000;
+        let startTime = localStorage.getItem('denisia_start') || Date.now();
+        localStorage.setItem('denisia_start', startTime);
+
+        function updateTimer() {
+            let remain = TRIAL_DURATION - (Date.now() - startTime);
+            if (remain <= 0) {
+                document.getElementById('time-left').innerText = "EXPIRED";
+                document.body.innerHTML = '<div style="color:white; text-align:center; padding-top:20vh;"><h1>TRIAL EXPIRED</h1><a href="https://www.patreon.com/posts/denisia-launcher-149434736" style="color:#00BFFF; font-size:30px;">BUY DENISIA LAUNCHER TO CONTINUE</a></div>';
+            } else {
+                let h = Math.floor(remain / 3600000);
+                let m = Math.floor((remain % 3600000) / 60000);
+                let s = Math.floor((remain % 60000) / 1000);
+                document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
+            }
+        }
+        setInterval(updateTimer, 1000);
+
+        function lockedGame() {
+            alert("This game is LOCKED. Click 'BUY DENISIA LAUNCHER' to unlock all 6 games!");
+        }
+
+        function launchGame(url) {
+            document.getElementById('game-frame').src = url;
+            document.getElementById('game-view').style.display = 'block';
+        }
+
+        function closeGame() {
+            document.getElementById('game-frame').src = "";
+            document.getElementById('game-view').style.display = 'none';
+        }
+
+        // Космос
+        const universe = document.getElementById('universe-bg');
+        for (let i = 0; i < 50; i++) {
+            let s = document.createElement('div');
+            s.className = 'star';
+            s.style.width = '2px'; s.style.height = '2px';
+            s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+            s.style.setProperty('--d', (Math.random() * 2 + 1) + 's');
+            universe.appendChild(s);
+        }
+    </script>
+</body>
+</html>
